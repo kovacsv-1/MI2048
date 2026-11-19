@@ -7,10 +7,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import szofverfejlesztes.mi2048.ui.AuthScreen
+import szofverfejlesztes.mi2048.ui.GameScreen
+import szofverfejlesztes.mi2048.ui.LeaderboardScreen
+import szofverfejlesztes.mi2048.ui.MainViewModel
 import szofverfejlesztes.mi2048.ui.theme._2048Theme
 
 class MainActivity : ComponentActivity() {
@@ -20,10 +26,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             _2048Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    MainAppNavHost(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -31,17 +34,47 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+fun MainAppNavHost(
+    modifier: Modifier = Modifier,
+    viewModel: MainViewModel = viewModel()
+) {
+    val navController = rememberNavController()
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    _2048Theme {
-        Greeting("Android")
+    NavHost(
+        navController = navController,
+        startDestination = "auth",
+        modifier = modifier
+    ) {
+        composable("auth") {
+            AuthScreen(
+                viewModel = viewModel,
+                onAuthSuccess = {
+                    navController.navigate("game") {
+                        popUpTo("auth") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("game") {
+            GameScreen(
+                viewModel = viewModel,
+                onNavigateToLeaderboard = {
+                    navController.navigate("leaderboard")
+                },
+                onLogout = {
+                    navController.navigate("auth") {
+                        popUpTo("game") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("leaderboard") {
+            LeaderboardScreen(
+                viewModel = viewModel,
+                onBackToGame = {
+                    navController.navigateUp()
+                }
+            )
+        }
     }
 }
